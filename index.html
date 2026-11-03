@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#126e70">
+<link rel="manifest" href="manifest.webmanifest">
+<title>ClasseMia</title>
+<style>
+:root{--teal:#126e70;--mint:#e8f5f2;--orange:#f3a45b;--ink:#203536;--muted:#687b7b}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f7f6;color:var(--ink)}
+header{background:var(--teal);color:white;padding:22px 18px 18px;border-radius:0 0 24px 24px}
+header small{opacity:.85}h1{margin:5px 0;font-size:27px}.sub{opacity:.9;font-size:14px}
+nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px}
+nav button,.action{border:0;border-radius:14px;padding:12px 8px;background:white;color:var(--teal);font-weight:650;box-shadow:0 2px 9px #1231}
+nav button.active,.primary{background:var(--teal);color:white}
+main{padding:4px 14px 30px;max-width:720px;margin:auto}
+.panel{background:white;border-radius:18px;padding:16px;margin:10px 0;box-shadow:0 2px 12px #1231}
+h2{font-size:19px;margin:0 0 12px}.muted{color:var(--muted);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:var(--mint);border-radius:14px;padding:12px}.stat b{display:block;font-size:23px;color:var(--teal)}
+input,select,textarea{width:100%;padding:12px;border:1px solid #d7e2df;border-radius:12px;font:inherit;margin:5px 0 10px;background:#fff}
+textarea{min-height:75px}label{font-size:13px;font-weight:650}
+button{cursor:pointer}.primary{border:0;border-radius:12px;padding:12px 16px;font-weight:700}
+.item{padding:11px 0;border-bottom:1px solid #edf1f0}.item:last-child{border:0}.item b{display:block}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+.delete{background:#fff0ed;color:#a33;border:0;border-radius:9px;padding:7px}
+section[hidden]{display:none}.notice{background:#fff7e9;padding:12px;border-radius:12px;font-size:13px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:15px}
+</style>
+</head>
+<body>
+<header><small>REGISTRO PERSONALE</small><h1>ClasseMia 📚</h1><div class="sub">Il tuo registro, semplice e ordinato</div></header>
+<nav id="tabs">
+<button class="active" data-tab="home">🏠 Home</button><button data-tab="alunni">👩‍🎓 Alunni</button><button data-tab="voti">📝 Voti</button>
+<button data-tab="lezioni">📔 Lezioni</button><button data-tab="assenze">📅 Assenze</button><button data-tab="note">⚠️ Note</button>
+</nav>
+<main>
+<section id="home">
+<div class="panel"><h2>Benvenuta!</h2><p class="muted">Il tuo spazio personale per organizzare la classe.</p><div class="stats"><div class="stat"><b id="nAlunni">0</b><span class="muted">Alunni</span></div><div class="stat"><b id="nVoti">0</b><span class="muted">Voti</span></div><div class="stat"><b id="nAssenze">0</b><span class="muted">Assenze</span></div></div></div>
+<div class="panel"><h2>Accesso rapido</h2><p>Usa le sezioni qui sopra per gestire il registro.</p><div class="notice">I dati vengono salvati nel browser di questo iPhone. Non inserire informazioni particolarmente sensibili.</div></div>
+</section>
+<section id="alunni" hidden><div class="panel"><h2>Elenco alunni</h2><label>Nome e cognome</label><input id="studentName" placeholder="Es. Nome Cognome"><button class="primary" onclick="addStudent()">Aggiungi alunno</button><div id="students"></div></div></section>
+<section id="voti" hidden><div class="panel"><h2>Registra un voto</h2><label>Alunno</label><select id="gradeStudent"></select><div class="row"><div><label>Voto</label><input id="gradeValue" type="number" min="1" max="10" step=".5" placeholder="8"></div><div><label>Data</label><input id="gradeDate" type="date"></div></div><label>Materia / descrizione</label><input id="gradeDesc" placeholder="Es. Matematica - verifica"><button class="primary" onclick="addRecord('grades')">Salva voto</button><div id="grades"></div></div></section>
+<section id="lezioni" hidden><div class="panel"><h2>Registro delle lezioni</h2><label>Data</label><input id="lessonDate" type="date"><label>Materia</label><input id="lessonSubject" placeholder="Materia"><label>Argomento / attività</label><textarea id="lessonText" placeholder="Cosa è stato svolto?"></textarea><button class="primary" onclick="addLesson()">Salva lezione</button><div id="lessons"></div></div></section>
+<section id="assenze" hidden><div class="panel"><h2>Assenze</h2><label>Alunno</label><select id="absenceStudent"></select><label>Data</label><input id="absenceDate" type="date"><label>Dettagli (facoltativi)</label><input id="absenceDesc" placeholder="Nota"><button class="primary" onclick="addRecord('absences')">Registra assenza</button><div id="absences"></div></div></section>
+<section id="note" hidden><div class="panel"><h2>Note disciplinari</h2><label>Alunno</label><select id="noteStudent"></select><label>Data</label><input id="noteDate" type="date"><label>Nota</label><textarea id="noteText" placeholder="Descrizione della nota"></textarea><button class="primary" onclick="addRecord('notes')">Salva nota</button><div id="notes"></div></div></section>
+<footer>ClasseMia · Registro personale</footer>
+</main>
+<script>
+const initial=['Dilan Tahir Cullhaj'];
+let db=JSON.parse(localStorage.getItem('classemia_db')||'null')||{students:initial,grades:[],lessons:[],absences:[],notes:[]};
+const save=()=>{localStorage.setItem('classemia_db',JSON.stringify(db));render()};
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!==b.dataset.tab)}));
+function addStudent(){let n=document.getElementById('studentName').value.trim();if(!n)return alert('Scrivi il nome dell’alunno.');db.students.push(n);document.getElementById('studentName').value='';save()}
+function addRecord(type){let map={grades:['gradeStudent','gradeDate','gradeDesc','gradeValue'],absences:['absenceStudent','absenceDate','absenceDesc'],notes:['noteStudent','noteDate','noteText']},ids=map[type];let student=document.getElementById(ids[0]).value,date=document.getElementById(ids[1]).value,desc=document.getElementById(ids[2]).value.trim(),value=type==='grades'?document.getElementById(ids[3]).value:'';if(!student)return alert('Aggiungi prima un alunno.');if(type==='grades'&&!value)return alert('Inserisci il voto.');db[type].unshift({student,date,desc,value});if(type==='grades')document.getElementById(ids[3]).value='';document.getElementById(ids[2]).value='';save()}
+function addLesson(){let date=lessonDate.value,subject=lessonSubject.value.trim(),desc=lessonText.value.trim();if(!subject||!desc)return alert('Inserisci materia e argomento.');db.lessons.unshift({date,subject,desc});lessonSubject.value='';lessonText.value='';save()}
+function remove(type,i){if(confirm('Eliminare questo elemento?')){db[type].splice(i,1);save()}}
+function list(type,id,formatter){document.getElementById(id).innerHTML=db[type].map((x,i)=>`<div class="item"><b>${formatter(x)}</b><span class="muted">${esc(x.date||'')}</span><button class="delete" onclick="remove('${type}',${i})">Elimina</button></div>`).join('')||'<p class="muted">Ancora nessun elemento.</p>'}
+function render(){nAlunni.textContent=db.students.length;nVoti.textContent=db.grades.length;nAssenze.textContent=db.absences.length;['gradeStudent','absenceStudent','noteStudent'].forEach(id=>document.getElementById(id).innerHTML=db.students.map(s=>`<option>${esc(s)}</option>`).join(''));students.innerHTML=db.students.map((s,i)=>`<div class="item"><b>${esc(s)}</b><button class="delete" onclick="if(confirm('Rimuovere ${esc(s)}?')){db.students.splice(${i},1);save()}">Rimuovi</button></div>`).join('');list('grades','grades',x=>`${esc(x.student)} · voto ${esc(x.value)}${x.desc?' — '+esc(x.desc):''}`);list('lessons','lessons',x=>`${esc(x.subject)} — ${esc(x.desc)}`);list('absences','absences',x=>`${esc(x.student)}${x.desc?' — '+esc(x.desc):''}`);list('notes','notes',x=>`${esc(x.student)} — ${esc(x.desc)}`)}
+render();
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body></html>
